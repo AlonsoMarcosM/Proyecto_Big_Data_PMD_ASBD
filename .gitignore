@@ -1,3 +1,5 @@
 openmetadata_codigo/
 OpenMetadata_documentacion/
 TFM/
+__pycache__/
+*.pyc
