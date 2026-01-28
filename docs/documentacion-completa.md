@@ -26,6 +26,7 @@ Ademas, Airflow se usa para orquestacion (requisitos ASBD).
 - `docker-compose/sql/`: scripts SQL (seed inicial del snapshot).
 - `productores/kafka/`: productor Python y ejemplos de eventos en formato `.jsonl`.
 - `docs/`: documentacion del proyecto (esta guia y el resto).
+- `docs/visualizaciones/`: previews locales (CSV/JSONL) generados al final de cada pipeline.
 
 ---
 
@@ -132,6 +133,11 @@ Rutas usadas por los jobs (Bronze/Silver/Gold):
   - `s3a://catalogo-datasets/checkpoints/`
 
 Ademas existe un bucket `spark` para ejemplos (y es configurado en `minio-mc`).
+
+Visualizacion local (previews):
+
+- Cada pipeline genera `preview.csv` y `preview.jsonl` en `docs/visualizaciones/`.
+- Esto permite abrir resultados en VS Code sin depender de MinIO UI.
 
 ---
 
@@ -367,6 +373,9 @@ En MinIO Console (`http://localhost:9001`):
   - `silver/kafka/dataset_updates/`
   - `gold/kafka/dataset_updates_agg/`
   - `checkpoints/`
+
+Alternativa rapida:
+- Abrir los previews en `docs/visualizaciones/` (CSV/JSONL).
 
 ---
 

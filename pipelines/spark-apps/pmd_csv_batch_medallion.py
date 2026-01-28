@@ -1,3 +1,7 @@
+import csv
+import json
+import os
+
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import (
     col,
@@ -26,6 +30,26 @@ def build_spark() -> SparkSession:
     )
     return builder.getOrCreate()
 
+def write_preview(df, out_dir, limit=20):
+    rows = df.limit(limit).collect()
+    if not rows:
+        return
+
+    os.makedirs(out_dir, exist_ok=True)
+    columns = df.columns
+
+    csv_path = os.path.join(out_dir, "preview.csv")
+    with open(csv_path, "w", newline="", encoding="utf-8") as csv_file:
+        writer = csv.writer(csv_file)
+        writer.writerow(columns)
+        for row in rows:
+            writer.writerow([row[col] for col in columns])
+
+    json_path = os.path.join(out_dir, "preview.jsonl")
+    with open(json_path, "w", encoding="utf-8") as json_file:
+        for row in rows:
+            json_file.write(json.dumps(row.asDict(), default=str) + "\n")
+
 
 spark = build_spark()
 
@@ -34,6 +58,7 @@ input_path = "file:/opt/spark-data/csv/catalogo_dataset.csv"
 bronze_path = "s3a://catalogo-datasets/bronze/csv/catalogo_dataset"
 silver_path = "s3a://catalogo-datasets/silver/csv/catalogo_dataset"
 gold_path = "s3a://catalogo-datasets/gold/csv/datasets_by_category"
+preview_dir = "/opt/visualizaciones/gold_csv_datasets_by_category"
 
 raw_df = (
     spark.read
@@ -80,5 +105,6 @@ gold_df = (
 )
 
 gold_df.write.format("delta").mode("overwrite").save(gold_path)
+write_preview(gold_df, preview_dir)
 
 spark.stop()

@@ -109,6 +109,7 @@ docker compose up -d --build
 - `pipelines/spark-apps/` Jobs Spark de los pipelines PMD.
 - `pipelines/data/` Datos locales (CSV) montados en Spark.
 - `docs/` Documentacion funcional y tecnica del proyecto.
+- `docs/visualizaciones/` Previews locales (CSV/JSONL) generados al final de cada pipeline.
 
 ## Alcance actual del TFM (fase base)
 

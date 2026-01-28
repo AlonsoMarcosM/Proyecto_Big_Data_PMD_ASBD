@@ -248,6 +248,12 @@ docker compose stop spark-master spark-worker-1 spark-worker-2
 - `gold/kafka/dataset_updates_agg/`
 - `checkpoints/` (subcarpetas de streaming)
 
+## 11.1) Previews locales (visualizacion rapida)
+
+Al terminar cada pipeline, se generan previews automaticamente en
+`docs/visualizaciones/` (CSV y JSONL) con las salidas Gold.
+Puedes abrirlos en VS Code con extensiones tipo "Rainbow CSV".
+
 ## 12) Logs y comprobaciones rapidas
 
 - Ver logs en Airflow: http://localhost:8085

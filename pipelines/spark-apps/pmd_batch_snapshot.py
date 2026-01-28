@@ -1,3 +1,7 @@
+import csv
+import json
+import os
+
 from delta.tables import DeltaTable
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, trim, to_timestamp, count, max as spark_max
@@ -19,6 +23,26 @@ def build_spark() -> SparkSession:
     )
     return builder.getOrCreate()
 
+def write_preview(df, out_dir, limit=20):
+    rows = df.limit(limit).collect()
+    if not rows:
+        return
+
+    os.makedirs(out_dir, exist_ok=True)
+    columns = df.columns
+
+    csv_path = os.path.join(out_dir, "preview.csv")
+    with open(csv_path, "w", newline="", encoding="utf-8") as csv_file:
+        writer = csv.writer(csv_file)
+        writer.writerow(columns)
+        for row in rows:
+            writer.writerow([row[col] for col in columns])
+
+    json_path = os.path.join(out_dir, "preview.jsonl")
+    with open(json_path, "w", encoding="utf-8") as json_file:
+        for row in rows:
+            json_file.write(json.dumps(row.asDict(), default=str) + "\n")
+
 
 spark = build_spark()
 
@@ -31,6 +55,7 @@ jdbc_url = (
 bronze_path = "s3a://catalogo-datasets/bronze/sqlserver/dataset_snapshot"
 silver_path = "s3a://catalogo-datasets/silver/sqlserver/dataset_snapshot"
 gold_path = "s3a://catalogo-datasets/gold/sqlserver/datasets_by_owner"
+preview_dir = "/opt/visualizaciones/gold_sqlserver_datasets_by_owner"
 
 last_ts = None
 if DeltaTable.isDeltaTable(spark, silver_path):
@@ -99,5 +124,6 @@ if DeltaTable.isDeltaTable(spark, silver_path):
         )
     )
     gold_df.write.format("delta").mode("overwrite").save(gold_path)
+    write_preview(gold_df, preview_dir)
 
 spark.stop()

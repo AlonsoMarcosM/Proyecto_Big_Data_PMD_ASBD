@@ -9,3 +9,5 @@ docker-compose/logs/
 memoria.latex
 docs/tfm-alineacion.md
 docs/openmetadata-basico.md
+docs/visualizaciones/*
+!docs/visualizaciones/README.md
