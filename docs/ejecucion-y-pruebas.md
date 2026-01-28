@@ -10,6 +10,19 @@ Este documento une `docs/ejecucion-local.md` y `docs/pruebas-pmd.md` en un flujo
 
 ## 1) Arranque del entorno
 
+Si vienes de una ejecucion anterior, limpia primero el stack:
+
+```powershell
+docker compose down -v
+```
+
+Nota: si Docker responde con error 500 en PowerShell, reinicia Docker Desktop y vuelve a ejecutar el comando.
+Si aparecen contenedores huerfanos (por ejemplo, de versiones anteriores), usa:
+
+```powershell
+docker compose down -v --remove-orphans
+```
+
 1) Entrar al directorio del entorno:
 
 ```bash
@@ -50,7 +63,6 @@ docker compose ps
 - Jupyter: http://localhost:8888
 - Kafka externo: localhost:9094
 - SQL Server: localhost:1433 (sa / Password1234%)
-- OpenMetadata UI: http://localhost:8585 (admin@open-metadata.org / admin)
 
 ## 3) Conexion de Spark en Airflow (si ejecutas DAGs)
 
@@ -103,7 +115,22 @@ Arrancar productor (si no esta corriendo):
 docker compose up -d kafka-producer
 ```
 
+Verificar que el topic existe:
+
+```powershell
+docker exec -i kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list
+```
+
 ## 8) Ejecutar batch estructurado (SQL Server) con Spark
+
+Recomendacion: ejecutar los jobs de Spark uno a uno (no simultaneos) para evitar picos de CPU/RAM.
+Flujo sugerido por pipeline: **ejecucion -> test -> visualizacion -> apagado -> siguiente pipeline**.
+
+### Terminales sugeridas (en paralelo)
+
+- Terminal A (ejecucion del job)
+- Terminal B (logs de Airflow o Spark)
+- Terminal C (verificacion en MinIO/Kafka)
 
 Opcion A: desde Airflow
 
@@ -114,6 +141,27 @@ Opcion B: desde el contenedor Spark
 ```powershell
 docker exec spark-master /opt/spark/bin/spark-submit /opt/spark-apps/pmd_batch_snapshot.py
 ```
+
+Test rapido (opcional):
+
+```powershell
+docker exec -i sqlserver /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P "Password1234%" -Q "SELECT COUNT(*) FROM catalogo.dbo.dataset_snapshot;"
+```
+
+Visualizacion (MinIO):
+
+1) Ir a http://localhost:9001
+2) Bucket `catalogo-datasets`
+3) Prefijos:
+
+- `bronze/sqlserver/dataset_snapshot/`
+- `silver/sqlserver/dataset_snapshot/`
+- `gold/sqlserver/datasets_by_owner/`
+
+Apagado del job:
+
+- Si se lanzo desde Airflow, marcar como terminado cuando acabe.
+- Si se lanzo desde `spark-submit`, el job termina solo.
 
 ## 9) Ejecutar batch semiestructurado (CSV) con Spark
 
@@ -127,9 +175,27 @@ Opcion B: desde el contenedor Spark
 docker exec spark-master /opt/spark/bin/spark-submit /opt/spark-apps/pmd_csv_batch_medallion.py
 ```
 
+Test rapido (opcional):
+
+```powershell
+docker exec -i spark-master ls -la /opt/spark-data/csv
+```
+
+Visualizacion (MinIO):
+
+- `bronze/csv/catalogo_dataset/`
+- `silver/csv/catalogo_dataset/`
+- `gold/csv/datasets_by_category/`
+
+Apagado del job:
+
+- Si se lanzo desde Airflow, marcar como terminado cuando acabe.
+- Si se lanzo desde `spark-submit`, el job termina solo.
+
 ## 10) Ejecutar streaming Kafka con Spark
 
 Nota: primero ejecuta el batch SQL para que exista `silver/sqlserver/dataset_snapshot/` y el join funcione.
+El streaming tiene limites de carga (offsets por micro-batch y particiones) para reducir consumo.
 
 1) Lanzar el trabajo streaming (se queda en ejecucion):
 
@@ -143,7 +209,26 @@ Opcion B (desde Airflow):
 2) Confirmar que el productor esta enviando eventos:
 
 ```powershell
-docker compose logs --tail 20 kafka-producer
+docker exec -i kafka /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic dataset_updates --from-beginning --max-messages 5
+```
+
+3) Visualizacion (MinIO):
+
+- `bronze/kafka/dataset_updates/`
+- `silver/kafka/dataset_updates/`
+- `gold/kafka/dataset_updates_agg/`
+- `checkpoints/` (streaming)
+
+Apagado del job streaming:
+
+```powershell
+docker exec spark-master pkill -f pmd_streaming_updates.py
+```
+
+Si no se detiene, puedes parar Spark:
+
+```powershell
+docker compose stop spark-master spark-worker-1 spark-worker-2
 ```
 
 ## 11) Ver resultados en MinIO
@@ -175,7 +260,7 @@ docker compose logs --tail 50 kafka-producer
 - Ver procesos streaming activos (opcional):
 
 ```powershell
-docker exec spark-master ps -ef | findstr pmd_streaming_updates.py
+docker exec spark-master ps -ef | grep pmd_streaming_updates.py
 ```
 
 ## 13) Limpieza del entorno

@@ -8,3 +8,4 @@ docker-compose/minio-data/
 docker-compose/logs/
 memoria.latex
 docs/tfm-alineacion.md
+docs/openmetadata-basico.md

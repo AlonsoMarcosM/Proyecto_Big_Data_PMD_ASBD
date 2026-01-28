@@ -605,112 +605,6 @@ services:
     networks:
       - spark-net
 
-  openmetadata-mysql:
-    image: docker.getcollate.io/openmetadata/db:1.11.5
-    container_name: openmetadata-mysql
-    restart: unless-stopped
-    environment:
-      - MYSQL_ROOT_PASSWORD=openmetadata_root_password
-    volumes:
-      - openmetadata-mysql-data:/var/lib/mysql
-    healthcheck:
-      test: "mysql --user=root --password=$$MYSQL_ROOT_PASSWORD --silent --execute 'use openmetadata_db'"
-      interval: 15s
-      timeout: 10s
-      retries: 10
-    networks:
-      - spark-net
-
-  openmetadata-elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.4
-    container_name: openmetadata-elasticsearch
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m
-    volumes:
-      - openmetadata-es-data:/usr/share/elasticsearch/data
-    healthcheck:
-      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health?pretty | grep -qE 'green|yellow'"]
-      interval: 15s
-      timeout: 10s
-      retries: 10
-    networks:
-      - spark-net
-
-  openmetadata-migrate:
-    image: docker.getcollate.io/openmetadata/server:1.11.5
-    container_name: openmetadata-migrate
-    command: "./bootstrap/openmetadata-ops.sh migrate"
-    environment:
-      - OPENMETADATA_CLUSTER_NAME=openmetadata
-      - SERVER_PORT=8585
-      - SERVER_ADMIN_PORT=8586
-      - LOG_LEVEL=INFO
-      - AUTHENTICATION_PROVIDER=basic
-      - PIPELINE_SERVICE_CLIENT_ENABLED=false
-      - DB_DRIVER_CLASS=com.mysql.cj.jdbc.Driver
-      - DB_SCHEME=mysql
-      - DB_PARAMS=allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
-      - DB_USER=openmetadata_user
-      - DB_USER_PASSWORD=openmetadata_password
-      - DB_HOST=openmetadata-mysql
-      - DB_PORT=3306
-      - OM_DATABASE=openmetadata_db
-      - ELASTICSEARCH_HOST=openmetadata-elasticsearch
-      - ELASTICSEARCH_PORT=9200
-      - ELASTICSEARCH_SCHEME=http
-      - SEARCH_TYPE=elasticsearch
-    depends_on:
-      openmetadata-elasticsearch:
-        condition: service_healthy
-      openmetadata-mysql:
-        condition: service_healthy
-    networks:
-      - spark-net
-
-  openmetadata-server:
-    image: docker.getcollate.io/openmetadata/server:1.11.5
-    container_name: openmetadata-server
-    restart: unless-stopped
-    environment:
-      - OPENMETADATA_CLUSTER_NAME=openmetadata
-      - SERVER_PORT=8585
-      - SERVER_ADMIN_PORT=8586
-      - LOG_LEVEL=INFO
-      - AUTHENTICATION_PROVIDER=basic
-      - PIPELINE_SERVICE_CLIENT_ENABLED=false
-      - SERVER_HOST_API_URL=http://openmetadata-server:8585/api
-      - OPENMETADATA_SERVER_URL=http://openmetadata-server:8585
-      - DB_DRIVER_CLASS=com.mysql.cj.jdbc.Driver
-      - DB_SCHEME=mysql
-      - DB_PARAMS=allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
-      - DB_USER=openmetadata_user
-      - DB_USER_PASSWORD=openmetadata_password
-      - DB_HOST=openmetadata-mysql
-      - DB_PORT=3306
-      - OM_DATABASE=openmetadata_db
-      - ELASTICSEARCH_HOST=openmetadata-elasticsearch
-      - ELASTICSEARCH_PORT=9200
-      - ELASTICSEARCH_SCHEME=http
-      - SEARCH_TYPE=elasticsearch
-    ports:
-      - "8585:8585"
-      - "8586:8586"
-    depends_on:
-      openmetadata-elasticsearch:
-        condition: service_healthy
-      openmetadata-mysql:
-        condition: service_healthy
-      openmetadata-migrate:
-        condition: service_completed_successfully
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8586/healthcheck"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-    networks:
-      - spark-net
 
 volumes:
   # pyscripts: 
@@ -726,8 +620,6 @@ volumes:
   kafka-config:
   sql_data:
   postgres-db-volume:
-  openmetadata-mysql-data:
-  openmetadata-es-data:
 
 
 networks:

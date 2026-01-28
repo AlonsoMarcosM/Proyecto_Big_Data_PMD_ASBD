@@ -13,13 +13,13 @@ Este repositorio implementa un mini-producto Big Data reproducible con Docker Co
 - Batch semiestructurado (CSV).
 - Streaming Kafka con join con batch.
 
-Ademas, Airflow se usa para orquestacion (requisitos ASBD) y OpenMetadata esta incluido como componente opcional de catalogacion (TFM / exploracion).
+Ademas, Airflow se usa para orquestacion (requisitos ASBD).
 
 ---
 
 ## 1) Estructura del repositorio (mapa rapido)
 
-- `docker-compose/docker-compose.yml`: composicion de servicios (Airflow, Spark, Kafka, SQL Server, MinIO, OpenMetadata, etc.).
+- `docker-compose/docker-compose.yml`: composicion de servicios (Airflow, Spark, Kafka, SQL Server, MinIO, etc.).
 - `pipelines/dags/`: DAGs de Airflow (organizados en `real/`, `test/`, `maintenance/`).
 - `pipelines/spark-apps/`: jobs Spark (batch y streaming, Delta Lake).
 - `pipelines/data/`: datos locales (CSV) montados en Spark.
@@ -44,7 +44,6 @@ Puertos principales (host):
 - MinIO S3 API: `http://localhost:9000`
 - Kafka externo (host): `localhost:9094`
 - SQL Server: `localhost:1433` (sa / Password1234%)
-- OpenMetadata: `http://localhost:8585` (admin@open-metadata.org / admin)
 
 Conexiones internas (entre contenedores):
 
@@ -391,20 +390,7 @@ Si todavia no existe la DB/tabla, primero ejecuta el seed (seccion 6.2).
 
 ---
 
-## 8) OpenMetadata (opcional para el trabajo)
-
-OpenMetadata se incluye para alineacion con el TFM y para explorar catalogacion.
-Para entrar:
-
-- URL: `http://localhost:8585`
-- User: `admin@open-metadata.org`
-- Password: `admin`
-
-Si te interesa integrarlo mas, lo recomendable es hacerlo como extra para mantener la demo sencilla.
-
----
-
-## 9) Sobre logs y git
+## 8) Sobre logs y git
 
 Se ignora la carpeta de logs de Airflow:
 
@@ -414,7 +400,7 @@ La idea es que el repo no se llene de artefactos de ejecucion.
 
 ---
 
-## 10) Troubleshooting (problemas tipicos)
+## 9) Troubleshooting (problemas tipicos)
 
 ### 10.1 `sqlcmd` no existe
 
@@ -446,7 +432,7 @@ Checklist:
 
 ---
 
-## 11) Referencias de codigo (por archivo)
+## 10) Referencias de codigo (por archivo)
 
 Batch SQL:
 - `docker-compose/sql/seed_dataset_snapshot.sql`: crea `catalogo.dbo.dataset_snapshot` y mete 3 filas.

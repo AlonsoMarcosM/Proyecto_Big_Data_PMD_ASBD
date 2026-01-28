@@ -25,6 +25,7 @@ def build_spark() -> SparkSession:
         .config("spark.hadoop.fs.s3a.connection.ssl.enabled", "false")
         .config("spark.hadoop.fs.s3a.access.key", "minioadmin")
         .config("spark.hadoop.fs.s3a.secret.key", "minioadmin123")
+        .config("spark.sql.shuffle.partitions", "4")
     )
     return builder.getOrCreate()
 
@@ -44,6 +45,7 @@ raw_events = (
     .option("kafka.bootstrap.servers", "kafka:9092")
     .option("subscribe", "dataset_updates")
     .option("startingOffsets", "earliest")
+    .option("maxOffsetsPerTrigger", "200")
     .load()
 )
 

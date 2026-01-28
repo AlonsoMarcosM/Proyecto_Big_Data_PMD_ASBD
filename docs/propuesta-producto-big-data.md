@@ -7,7 +7,7 @@ Este documento describe el producto Big Data propuesto y la arquitectura asociad
 - Variedad: usar fuentes de datos estructuradas y semiestructuradas.
 - Velocidad: combinar procesamiento batch y procesamiento streaming.
 
-La propuesta se alinea con el Trabajo Fin de Master (TFM) relacionado con OpenMetadata y DCAT-AP. En estas asignaturas se mantiene un alcance acotado para demostrar con claridad el pipeline y la arquitectura. OpenMetadata es opcional y se plantea como apoyo para el catalogo y el gobierno de datos.
+La propuesta se alinea con el Trabajo Fin de Master (TFM) del estudiante, pero en estas asignaturas se mantiene un alcance acotado para demostrar con claridad el pipeline y la arquitectura.
 
 ## Arquitectura propuesta (vision general)
 
@@ -17,8 +17,6 @@ La arquitectura esta pensada para ejecutarse en local y ser reutilizable en ASBD
 - Kafka como broker de eventos en streaming.
 - Spark para procesamiento batch y streaming (Structured Streaming).
 - Airflow para orquestacion del batch con planificacion diaria y control de estado.
-
-OpenMetadata se contempla como componente opcional para centralizar y visualizar el catalogo resultante.
 
 Para el detalle del pipeline PMD, ver `docs/arquitectura-pmd.md`.
 
@@ -115,7 +113,6 @@ Aunque este documento se centra en PMD, se incluye un resumen de los requisitos 
 - Logs o capturas del streaming consumiendo y aplicando al menos 10 eventos.
 - Salida final con resultados de R1 a R4 (conteos y listas).
 - Para ASBD: captura de `docker compose up` con servicios levantados y DAGs en Airflow.
-- Logs o capturas en OpenMetadata mostrando el catalogo cargado o actualizado, si se integra.
 
 ## Resumen
 

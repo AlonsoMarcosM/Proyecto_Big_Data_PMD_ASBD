@@ -1,6 +1,6 @@
 # Trabajo final PMD y ASBD - Catalogo de metadatos de datasets
 
-Este repositorio implementa una propuesta sencilla y reproducible de producto Big Data para las asignaturas Procesamiento Masivo de Datos (PMD) y Arquitectura de Sistemas Big Data (ASBD). La propuesta se alinea con el TFM sobre OpenMetadata y DCAT-AP, pero limita el alcance a pipelines claros y demostrables.
+Este repositorio implementa una propuesta sencilla y reproducible de producto Big Data para las asignaturas Procesamiento Masivo de Datos (PMD) y Arquitectura de Sistemas Big Data (ASBD). La propuesta limita el alcance a pipelines claros y demostrables.
 
 La idea central es mantener un catalogo vivo con tres pipelines (Medallion + Delta):
 - Batch estructurado incremental desde SQL Server.
@@ -56,7 +56,6 @@ flowchart TB
 - Cumple variedad y velocidad: datos estructurados, semiestructurados y streaming real.
 - Orquesta tareas en Airflow con cron, macros temporales, bifurcacion, XCom/TaskFlow, sensores y conexion entre DAGs (ASBD).
 - Usa Delta Lake con capas Bronze/Silver/Gold en cada pipeline (PMD).
-- Incluye OpenMetadata basico como componente opcional de catalogacion.
 
 ## Ejecucion rapida (local)
 
@@ -94,7 +93,6 @@ docker compose up -d --build
 - Jupyter: http://localhost:8888
 - Kafka externo: localhost:9094
 - SQL Server: localhost:1433 (usuario: sa, clave: Password1234%)
-- OpenMetadata: http://localhost:8585 (admin@open-metadata.org / admin)
 
 ## Documentacion principal
 
@@ -103,8 +101,6 @@ docker compose up -d --build
 - Arquitectura PMD (pipelines y Medallion): `docs/arquitectura-pmd.md`
 - Orquestacion en Airflow y requisitos ASBD: `docs/arquitectura-airflow.md`
 - Guia unica de ejecucion y pruebas: `docs/ejecucion-y-pruebas.md`
-- Alineacion con TFM y alcance actual: `docs/tfm-alineacion.md`
-- OpenMetadata basico (opcional): `docs/openmetadata-basico.md`
 
 ## Estructura del repositorio
 
@@ -113,9 +109,6 @@ docker compose up -d --build
 - `pipelines/spark-apps/` Jobs Spark de los pipelines PMD.
 - `pipelines/data/` Datos locales (CSV) montados en Spark.
 - `docs/` Documentacion funcional y tecnica del proyecto.
-- `TFM/` Documentos de referencia del TFM.
-- `OpenMetadata_documentacion/` Material de apoyo sobre OpenMetadata.
-- `openmetadata_codigo/` Pruebas y ejemplos relacionados con OpenMetadata.
 
 ## Alcance actual del TFM (fase base)
 
@@ -123,9 +116,7 @@ El trabajo se centra en construir una base reproducible que permite avanzar en e
 
 ### Logros futuros posibles (fuera de alcance en esta fase)
 
-- Analizar la estructura y los elementos del modelo DCAT-AP y sus extensiones.
-- Mapear clases y propiedades de DCAT-AP con entidades equivalentes de OpenMetadata.
-- Configurar taxonomias, tipos personalizados y relaciones en OpenMetadata.
+- Analizar la estructura y los elementos de un modelo de catalogo interoperable.
 - Implementar pipeline de ingestion desde una fuente externa (por ejemplo CKAN).
-- Validar la configuracion mediante exportacion o federacion en formato compatible con DCAT-AP.
+- Validar la configuracion mediante exportacion o federacion en formato compatible con estandares de catalogo.
 - Evaluar beneficios y limitaciones de la configuracion en interoperabilidad y mantenimiento.
