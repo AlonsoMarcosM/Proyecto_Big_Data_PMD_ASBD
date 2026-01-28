@@ -102,10 +102,9 @@ docker compose up -d --build
 - Documentacion completa del proyecto: `docs/documentacion-completa.md`
 - Arquitectura PMD (pipelines y Medallion): `docs/arquitectura-pmd.md`
 - Orquestacion en Airflow y requisitos ASBD: `docs/arquitectura-airflow.md`
-- Guia de ejecucion local y notas del entorno: `docs/ejecucion-local.md`
+- Guia unica de ejecucion y pruebas: `docs/ejecucion-y-pruebas.md`
 - Alineacion con TFM y alcance actual: `docs/tfm-alineacion.md`
 - OpenMetadata basico (opcional): `docs/openmetadata-basico.md`
-- Pruebas PMD paso a paso: `docs/pruebas-pmd.md`
 
 ## Estructura del repositorio
 
@@ -130,4 +129,3 @@ El trabajo se centra en construir una base reproducible que permite avanzar en e
 - Implementar pipeline de ingestion desde una fuente externa (por ejemplo CKAN).
 - Validar la configuracion mediante exportacion o federacion en formato compatible con DCAT-AP.
 - Evaluar beneficios y limitaciones de la configuracion en interoperabilidad y mantenimiento.
-

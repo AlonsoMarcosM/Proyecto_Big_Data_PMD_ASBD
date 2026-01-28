@@ -6,3 +6,5 @@ __pycache__/
 docker-compose/config/
 docker-compose/minio-data/
 docker-compose/logs/
+memoria.latex
+docs/tfm-alineacion.md

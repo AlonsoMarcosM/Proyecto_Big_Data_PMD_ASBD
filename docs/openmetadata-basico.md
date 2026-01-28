@@ -43,8 +43,3 @@ docker compose up -d --build
 - Esta fase solo prepara el catalogo base.
 - Las extensiones de DCAT-AP se dejan para etapas posteriores del TFM.
 
-## Referencias locales
-
-- `OpenMetadata_documentacion/`
-- `TFM/Guia de implementacion del modelo DCAT-AP en OpenMetadata.pdf`
-
