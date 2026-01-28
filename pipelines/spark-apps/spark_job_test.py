@@ -14,7 +14,7 @@ spark = (SparkSession.builder
     # Crea el catálogo como un DeltaCatalog
     .config("spark.sql.catalog.spark_catalog",
             "org.apache.spark.sql.delta.catalog.DeltaCatalog")
-    .config("spark.sql.warehouse.dir", "s3a://hospital/")
+    .config("spark.sql.warehouse.dir", "s3a://catalogo-datasets/")
     
     # estamos usando hive en memoria, el catalogo no persiste entre sesiones
     # Establecer la conexión a minio
@@ -35,7 +35,7 @@ from pyspark.sql.types import StructType, StructField, StringType, DoubleType, T
 from pyspark.sql import Row
 
 
-bronze_table_checkpoint="s3a://hospital/bronze/pacientes_checkpoint"
+bronze_table_checkpoint="s3a://catalogo-datasets/bronze/pacientes_checkpoint"
 
 # CREAR TABLA DE checkpoint SI NO EXISTE
 schema_processed = StructType([

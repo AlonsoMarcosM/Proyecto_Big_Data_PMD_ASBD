@@ -17,7 +17,7 @@ Esta fase se centra en construir la base tecnica para el TFM y las asignaturas P
 - Catalogo de datasets con snapshot batch y actualizaciones en streaming.
 - Orquestacion en Airflow con DAGs simples y demostrables.
 - Entorno reproducible con Docker Compose.
-- OpenMetadata como componente opcional (sin configuraciones avanzadas).
+- OpenMetadata minimo integrado (sin configuraciones avanzadas).
 
 ## Logros posteriores posibles (no incluidos en esta fase)
 
@@ -38,3 +38,4 @@ Esta fase se centra en construir la base tecnica para el TFM y las asignaturas P
 - `TFM/Guia de implementacion del modelo DCAT-AP en OpenMetadata.pdf`
 - `TFM/Sistema_planificacion_TFM.docx`
 - `TFM/ANTEPROYECTO DE TFM.pdf`
+

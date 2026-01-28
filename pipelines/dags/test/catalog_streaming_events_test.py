@@ -34,7 +34,7 @@ def _parse_incomplete_ids(raw_value) -> list[str]:
 
 
 with DAG(
-    dag_id="catalog_streaming_events",
+    dag_id="catalog_streaming_events_test",
     description="Streaming simulado de eventos de catalogo",
     start_date=datetime(2025, 1, 1),
     schedule=None,
@@ -45,7 +45,7 @@ with DAG(
 
     wait_for_snapshot = ExternalTaskSensor(
         task_id="wait_for_snapshot",
-        external_dag_id="catalog_batch_daily",
+        external_dag_id="catalog_batch_minutely_test",
         external_task_id="snapshot_ready",
         execution_date_fn=_external_execution_date_fn,
         allowed_states=["success"],

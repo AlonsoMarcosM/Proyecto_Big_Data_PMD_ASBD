@@ -11,10 +11,10 @@ from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 
 
 with DAG(
-    dag_id="catalog_batch_daily",
-    description="Snapshot diario del catalogo de datasets y disparo del streaming",
+    dag_id="catalog_batch_minutely_test",
+    description="Snapshot frecuente del catalogo de datasets y disparo del streaming",
     start_date=datetime(2025, 1, 1),
-    schedule="@daily",
+    schedule="* * * * *",
     catchup=False,
     tags=["catalogo", "batch"],
 ) as dag:
@@ -84,7 +84,7 @@ with DAG(
     def branch_on_snapshot(**context) -> str:
         snapshot = context["ti"].xcom_pull(task_ids="normalize_snapshot")
         if snapshot and snapshot.get("dataset_count", 0) > 0:
-            return "emit_streaming_events"
+            return "trigger_streaming_dag"
         return "skip_streaming_events"
 
     decide_branch = BranchPythonOperator(
@@ -92,41 +92,13 @@ with DAG(
         python_callable=branch_on_snapshot,
     )
 
-    @task
-    def emit_streaming_events(snapshot: dict) -> dict:
-        # Simula eventos de actualizacion para el streaming
-        events = [
-            {
-                "event_time": "2025-12-18T10:35:00Z",
-                "event_type": "dataset_updated",
-                "dataset_id": "ds_001",
-                "changed_field": "description",
-                "new_value": "descripcion actualizada",
-            },
-            {
-                "event_time": "2025-12-18T10:35:05Z",
-                "event_type": "dataset_updated",
-                "dataset_id": "ds_002",
-                "changed_field": "tags",
-                "new_value": "dcat,open,metadata",
-            },
-            {
-                "event_time": "2025-12-18T10:35:10Z",
-                "event_type": "dataset_updated",
-                "dataset_id": "ds_003",
-                "changed_field": "url",
-                "new_value": "https://example.org/c-new",
-            },
-        ]
-        return {"event_count": len(events), "events": events}
-
     skip_streaming_events = EmptyOperator(task_id="skip_streaming_events")
 
     snapshot_ready = EmptyOperator(task_id="snapshot_ready")
 
     trigger_streaming_dag = TriggerDagRunOperator(
         task_id="trigger_streaming_dag",
-        trigger_dag_id="catalog_streaming_events",
+        trigger_dag_id="catalog_streaming_events_test",
         conf={
             "run_date": "{{ ds }}",
             "incomplete_dataset_ids": "{{ ti.xcom_pull(task_ids='find_incomplete_metadata') }}",
@@ -143,5 +115,5 @@ with DAG(
     log_execution_date >> snapshot >> normalized >> incomplete >> snapshot_ready
     snapshot_ready >> decide_branch
 
-    decide_branch >> emit_streaming_events(normalized) >> trigger_streaming_dag >> end
+    decide_branch >> trigger_streaming_dag >> end
     decide_branch >> skip_streaming_events >> end

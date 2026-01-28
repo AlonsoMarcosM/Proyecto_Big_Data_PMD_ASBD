@@ -20,6 +20,8 @@ La arquitectura esta pensada para ejecutarse en local y ser reutilizable en ASBD
 
 OpenMetadata se contempla como componente opcional para centralizar y visualizar el catalogo resultante.
 
+Para el detalle del pipeline PMD, ver `docs/arquitectura-pmd.md`.
+
 ## Caso de uso
 
 En organizaciones con multiples equipos y sistemas de datos, los metadatos de los datasets cambian con frecuencia (descripciones, etiquetas, enlaces, responsables). Mantener un inventario actualizado facilita gobernanza, localizacion de activos y trazabilidad.
@@ -97,6 +99,16 @@ Procesamiento previsto (simple y demostrable):
 - Validacion de eventos en streaming y aplicacion del cambio al dataset correspondiente.
 - Calculo de salidas necesarias para R1 a R4 (listas y conteos).
 
+## Requisitos de orquestacion ASBD (resumen)
+
+Aunque este documento se centra en PMD, se incluye un resumen de los requisitos de orquestacion de ASBD. El detalle tecnico esta en `docs/arquitectura-airflow.md`:
+
+- Tareas con distinta periodicidad: `@daily` y un DAG con Cron, con macros temporales en tareas de log.
+- Bifurcacion o condicion: `BranchPythonOperator` en el DAG batch.
+- XCom o TaskFlow: tareas que devuelven datos y los consumen en pasos posteriores.
+- Sensor: `ExternalTaskSensor` en el DAG de streaming.
+- Conexion entre DAGs: `TriggerDagRunOperator` desde el DAG batch al DAG de streaming.
+
 ## Evidencias
 
 - Logs o capturas de la ejecucion batch leyendo SQL y cargando 3 a 5 datasets.
@@ -108,3 +120,4 @@ Procesamiento previsto (simple y demostrable):
 ## Resumen
 
 El producto propuesto mantiene un catalogo de metadatos de datasets combinando un snapshot batch diario desde SQL y una ingesta en streaming de eventos JSON que actualizan esos datasets. La propuesta cumple con los requisitos de variedad y velocidad exigidos en PMD, define retos claros y demostrables, y plantea una arquitectura reproducible con Docker Compose y orquestacion con Airflow, reutilizable para ASBD.
+

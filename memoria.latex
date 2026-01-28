@@ -1,0 +1,93 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{hyperref}
+\geometry{margin=2.5cm}
+
+\title{Memoria breve del proyecto PMD/ASBD}
+\author{Alumno: Alonso Marcos}
+\date{Enero 2026}
+
+\begin{document}
+\maketitle
+
+\section{Arquitectura desarrollada}
+
+El proyecto implementa un mini-producto Big Data reproducible con Docker Compose. La arquitectura sigue un enfoque Medallion (Bronze/Silver/Gold) sobre Delta Lake, con tres pipelines de ingesta: (1) batch estructurado incremental desde SQL Server, (2) batch semiestructurado desde CSV, y (3) streaming real desde Kafka con enriquecimiento mediante join con datos batch. El almacenamiento se realiza en MinIO (S3A local) y la orquestaci\'on se gestiona con Airflow para cumplir los requisitos de ASBD.
+
+La estructura del repositorio separa claramente productores y pipelines:
+
+\begin{itemize}
+  \item \textbf{Productores}: carpeta \texttt{productores/}.
+  \item \textbf{Pipelines}: carpeta \texttt{pipelines/}.
+\end{itemize}
+
+El c\'odigo del proyecto es visible en el repositorio p\'ublico: \href{https://github.com/AlonsoMarcosM/Proyecto_Big_Data_PMD_ASBD}{https://github.com/AlonsoMarcosM/Proyecto\_Big\_Data\_PMD\_ASBD}.
+
+\section{Elementos y componentes}
+
+\subsection{Productores}
+
+\begin{itemize}
+  \item \textbf{Productor Kafka (Python)}: publica eventos JSON de actualizaci\'on de datasets de forma continua. Vive en \texttt{productores/kafka/producer\_kafka.py} y se ejecuta como servicio \texttt{kafka-producer} en Docker Compose.
+  \item \textbf{Eventos de referencia}: ejemplos de eventos en \texttt{productores/kafka/events.jsonl} (\textit{solo referencia}).
+\end{itemize}
+
+\subsection{Pipelines}
+
+\begin{itemize}
+  \item \textbf{Batch estructurado incremental (SQL Server)}: \texttt{pipelines/spark-apps/pmd\_batch\_snapshot.py}. Ingesta incremental a Bronze, upsert a Silver y agregados en Gold.
+  \item \textbf{Batch semiestructurado (CSV)}: \texttt{pipelines/spark-apps/pmd\_csv\_batch\_medallion.py}. CSV crudo a Bronze, parseo de JSON embebido a Silver y agregados por categor\'ia a Gold.
+  \item \textbf{Streaming Kafka + join batch}: \texttt{pipelines/spark-apps/pmd\_streaming\_updates.py}. Escritura Bronze/Silver, watermark y ventanas de 1 minuto en Gold, con enriquecimiento por join con la capa Silver SQL.
+\end{itemize}
+
+\subsection{Orquestaci\'on}
+
+Airflow orquesta los procesos mediante DAGs ubicados en \texttt{pipelines/dags/}. Para el PMD se incluyen DAGs reales con SparkSubmitOperator, y para ASBD se incluyen DAGs de prueba con macros, sensores, bifurcaciones y XCom.
+
+\subsection{Almacenamiento}
+
+MinIO act\'ua como S3 local. Las rutas principales siguen la estructura Medallion:
+
+\begin{itemize}
+  \item \textbf{Bronze}: \texttt{s3a://catalogo-datasets/bronze/...}
+  \item \textbf{Silver}: \texttt{s3a://catalogo-datasets/silver/...}
+  \item \textbf{Gold}: \texttt{s3a://catalogo-datasets/gold/...}
+\end{itemize}
+
+\section{Planificaci\'on de procesos batch}
+
+Los procesos batch se planifican en Airflow con periodicidades claras:
+
+\begin{itemize}
+  \item \textbf{Batch SQL incremental}: ejecuci\'on diaria (\texttt{@daily}) para simular un snapshot incremental.
+  \item \textbf{Batch CSV}: cron \texttt{0 2 * * *} para una carga nocturna simple.
+\end{itemize}
+
+El pipeline streaming se ejecuta bajo demanda (job continuo) y el productor Kafka genera eventos con un intervalo configurable (por defecto cada 10 segundos).
+
+\section{Respuesta a las preguntas del entregable inicial (fuentes de datos)}
+
+Las fuentes de datos definidas en el entregable inicial se materializan as\'i:
+
+\begin{itemize}
+  \item \textbf{Fuente estructurada}: SQL Server (tabla \texttt{catalogo.dbo.dataset\_snapshot}) contiene el estado base del cat\'alogo. Permite ingesta incremental por \texttt{modified\_at}.
+  \item \textbf{Fuente semiestructurada}: CSV local \texttt{pipelines/data/csv/catalogo\_dataset.csv} con columna JSON embebida para simular metadatos adicionales.
+  \item \textbf{Fuente streaming}: Kafka topic \texttt{dataset\_updates} con eventos JSON generados por el productor Python.
+\end{itemize}
+
+Estas tres fuentes cumplen el requisito de variedad y permiten mostrar batch incremental, batch semiestructurado y streaming real con enriquecimiento.
+
+\section{Video de demostraci\'on}
+
+Enlace al video (3 minutos) donde se presenta la ejecuci\'on y los retos abordados:
+
+\begin{center}
+\texttt{https://TU\_ENLACE\_DE\_VIDEO}
+\end{center}
+
+\section{Conclusi\'on}
+
+El proyecto entrega una arquitectura completa y reproducible para PMD/ASBD, con productores claramente separados, pipelines Medallion en Delta Lake y orquestaci\'on en Airflow. La documentaci\'on detallada se encuentra en la carpeta \texttt{docs/}.
+
+\end{document}

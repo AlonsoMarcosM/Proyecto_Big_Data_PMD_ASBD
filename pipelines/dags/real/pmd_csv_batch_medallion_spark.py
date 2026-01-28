@@ -7,26 +7,23 @@ from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOpe
 
 
 with DAG(
-    dag_id="spark_medallion",
-    description="Pipeline Medallion con Spark y Delta sobre MinIO",
+    dag_id="pmd_csv_batch_medallion_spark",
+    description="Batch CSV semiestructurado con Delta medallion",
     start_date=datetime(2025, 1, 1),
-    schedule=None,
+    schedule="0 2 * * *",
     catchup=False,
-    tags=["spark", "delta", "minio"],
+    tags=["pmd", "spark", "batch", "csv", "delta"],
 ) as dag:
-    submit_spark_job = SparkSubmitOperator(
-        task_id="submit_spark_job",
+    submit_csv_batch = SparkSubmitOperator(
+        task_id="submit_csv_batch",
         conn_id="spark_default",
-        application="/opt/spark-apps/spark_job.py",
-        name="crear_arquitectura_medallion",
+        application="/opt/spark-apps/pmd_csv_batch_medallion.py",
+        name="pmd_csv_batch_medallion",
         packages=(
             "org.apache.hadoop:hadoop-aws:3.4.0,"
-            "software.amazon.awssdk:bundle:2.23.19,"
-            "io.delta:delta-spark_2.13:4.0.0"
+            "software.amazon.awssdk:bundle:2.23.19"
         ),
         conf={
-            "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
-            "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog",
             "spark.hadoop.fs.s3a.endpoint": "http://minio:9000",
             "spark.hadoop.fs.s3a.path.style.access": "true",
             "spark.hadoop.fs.s3a.connection.ssl.enabled": "false",
@@ -36,4 +33,4 @@ with DAG(
         verbose=True,
     )
 
-    submit_spark_job
+    submit_csv_batch

@@ -31,12 +31,12 @@ x-airflow-common:
     # The following line can be used to set a custom config file, stored in the local config folder
     AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
   volumes:
-    - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
+    - ../pipelines/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
     - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
-    - ./spark-apps:/opt/spark-apps
-    - ./spark-data:/opt/spark-data
+    - ../pipelines/spark-apps:/opt/spark-apps
+    - ../pipelines/data:/opt/spark-data
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
@@ -73,8 +73,8 @@ services:
     command:  >
       /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master 
     volumes:
-      - ./spark-apps:/opt/spark-apps
-      - ./spark-data:/opt/spark-data
+      - ../pipelines/spark-apps:/opt/spark-apps
+      - ../pipelines/data:/opt/spark-data
       # - ./spark-metastore:/opt/hive/metastore_db
       # - pyscripts:/opt/spark/pyscripts      
       #- work-dir:/usr/src      
@@ -114,8 +114,8 @@ services:
     command:   >
       /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
     volumes:
-      - ./spark-apps:/opt/spark-apps
-      - ./spark-data:/opt/spark-data 
+      - ../pipelines/spark-apps:/opt/spark-apps
+      - ../pipelines/data:/opt/spark-data 
       # - ./spark-metastore:/opt/hive/metastore_db
     ports:
       - "8081:8081"
@@ -150,8 +150,8 @@ services:
     command:   >
       /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
     volumes:
-      - ./spark-apps:/opt/spark-apps
-      - ./spark-data:/opt/spark-data    
+      - ../pipelines/spark-apps:/opt/spark-apps
+      - ../pipelines/data:/opt/spark-data    
       # - ./spark-metastore:/opt/hive/metastore_db
     ports:
       - "8082:8082"
@@ -191,7 +191,7 @@ services:
         echo 'MinIO no listo todavía, reintentando...'; sleep 2;
       done &&
       mc mb -p local/spark || true &&
-      mc mb -p local/hospital || true &&
+      mc mb -p local/catalogo-datasets || true &&
       mc anonymous set download local/spark &&
       tail -f /dev/null
       "
@@ -343,7 +343,8 @@ services:
     ports:
       - "1433:1433"
     volumes:
-      - sql_data:/var/opt/mssql      
+      - sql_data:/var/opt/mssql
+      - ./sql:/opt/mssql-scripts
     networks:
       - spark-net      
     restart: unless-stopped
@@ -586,6 +587,131 @@ services:
     networks:
       - spark-net
 
+  kafka-producer:
+    build:
+      context: .
+      dockerfile: dockerfile-producer
+    container_name: kafka-producer
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - KAFKA_TOPIC=dataset_updates
+      - PRODUCER_INTERVAL_SECONDS=10
+    command: ["python", "/opt/producer/producer_kafka.py"]
+    volumes:
+      - ../productores/kafka:/opt/producer
+    depends_on:
+      - kafka
+    restart: unless-stopped
+    networks:
+      - spark-net
+
+  openmetadata-mysql:
+    image: docker.getcollate.io/openmetadata/db:1.11.5
+    container_name: openmetadata-mysql
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=openmetadata_root_password
+    volumes:
+      - openmetadata-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: "mysql --user=root --password=$$MYSQL_ROOT_PASSWORD --silent --execute 'use openmetadata_db'"
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    networks:
+      - spark-net
+
+  openmetadata-elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.4
+    container_name: openmetadata-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    volumes:
+      - openmetadata-es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health?pretty | grep -qE 'green|yellow'"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    networks:
+      - spark-net
+
+  openmetadata-migrate:
+    image: docker.getcollate.io/openmetadata/server:1.11.5
+    container_name: openmetadata-migrate
+    command: "./bootstrap/openmetadata-ops.sh migrate"
+    environment:
+      - OPENMETADATA_CLUSTER_NAME=openmetadata
+      - SERVER_PORT=8585
+      - SERVER_ADMIN_PORT=8586
+      - LOG_LEVEL=INFO
+      - AUTHENTICATION_PROVIDER=basic
+      - PIPELINE_SERVICE_CLIENT_ENABLED=false
+      - DB_DRIVER_CLASS=com.mysql.cj.jdbc.Driver
+      - DB_SCHEME=mysql
+      - DB_PARAMS=allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+      - DB_USER=openmetadata_user
+      - DB_USER_PASSWORD=openmetadata_password
+      - DB_HOST=openmetadata-mysql
+      - DB_PORT=3306
+      - OM_DATABASE=openmetadata_db
+      - ELASTICSEARCH_HOST=openmetadata-elasticsearch
+      - ELASTICSEARCH_PORT=9200
+      - ELASTICSEARCH_SCHEME=http
+      - SEARCH_TYPE=elasticsearch
+    depends_on:
+      openmetadata-elasticsearch:
+        condition: service_healthy
+      openmetadata-mysql:
+        condition: service_healthy
+    networks:
+      - spark-net
+
+  openmetadata-server:
+    image: docker.getcollate.io/openmetadata/server:1.11.5
+    container_name: openmetadata-server
+    restart: unless-stopped
+    environment:
+      - OPENMETADATA_CLUSTER_NAME=openmetadata
+      - SERVER_PORT=8585
+      - SERVER_ADMIN_PORT=8586
+      - LOG_LEVEL=INFO
+      - AUTHENTICATION_PROVIDER=basic
+      - PIPELINE_SERVICE_CLIENT_ENABLED=false
+      - SERVER_HOST_API_URL=http://openmetadata-server:8585/api
+      - OPENMETADATA_SERVER_URL=http://openmetadata-server:8585
+      - DB_DRIVER_CLASS=com.mysql.cj.jdbc.Driver
+      - DB_SCHEME=mysql
+      - DB_PARAMS=allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+      - DB_USER=openmetadata_user
+      - DB_USER_PASSWORD=openmetadata_password
+      - DB_HOST=openmetadata-mysql
+      - DB_PORT=3306
+      - OM_DATABASE=openmetadata_db
+      - ELASTICSEARCH_HOST=openmetadata-elasticsearch
+      - ELASTICSEARCH_PORT=9200
+      - ELASTICSEARCH_SCHEME=http
+      - SEARCH_TYPE=elasticsearch
+    ports:
+      - "8585:8585"
+      - "8586:8586"
+    depends_on:
+      openmetadata-elasticsearch:
+        condition: service_healthy
+      openmetadata-mysql:
+        condition: service_healthy
+      openmetadata-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8586/healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - spark-net
+
 volumes:
   # pyscripts: 
   # work-dir:
@@ -600,6 +726,8 @@ volumes:
   kafka-config:
   sql_data:
   postgres-db-volume:
+  openmetadata-mysql-data:
+  openmetadata-es-data:
 
 
 networks:

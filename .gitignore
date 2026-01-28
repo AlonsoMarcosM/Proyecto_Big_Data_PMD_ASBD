@@ -3,3 +3,6 @@ OpenMetadata_documentacion/
 TFM/
 __pycache__/
 *.pyc
+docker-compose/config/
+docker-compose/minio-data/
+docker-compose/logs/

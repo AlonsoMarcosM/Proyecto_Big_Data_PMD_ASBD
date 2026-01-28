@@ -1,16 +1,62 @@
 # Trabajo final PMD y ASBD - Catalogo de metadatos de datasets
 
-Este repositorio implementa una propuesta sencilla y reproducible de producto Big Data para las asignaturas Procesamiento Masivo de Datos (PMD) y Arquitectura de Sistemas Big Data (ASBD). La propuesta se alinea con el Trabajo Fin de Master (TFM) sobre OpenMetadata y DCAT-AP, pero limita el alcance a un pipeline claro y demostrable.
+Este repositorio implementa una propuesta sencilla y reproducible de producto Big Data para las asignaturas Procesamiento Masivo de Datos (PMD) y Arquitectura de Sistemas Big Data (ASBD). La propuesta se alinea con el TFM sobre OpenMetadata y DCAT-AP, pero limita el alcance a pipelines claros y demostrables.
 
-La idea central es mantener un catalogo vivo de datasets con dos fuentes:
-- Un snapshot diario desde una fuente estructurada (SQL Server).
-- Un flujo de eventos en streaming (Kafka) que actualiza metadatos de esos mismos datasets.
+La idea central es mantener un catalogo vivo con tres pipelines (Medallion + Delta):
+- Batch estructurado incremental desde SQL Server.
+- Batch semiestructurado desde CSV.
+- Streaming Kafka con join con batch.
+
+## Diagramas (Mermaid)
+
+### Arquitectura general
+
+```mermaid
+flowchart LR
+  subgraph Fuentes
+    SQL[(SQL Server)]
+    CSV[(CSV local)]
+    KP[Productor Kafka]
+  end
+
+  subgraph Orquestacion
+    AF[Airflow DAGs]
+  end
+
+  subgraph Procesamiento
+    SP[Spark Jobs]
+  end
+
+  subgraph Almacenamiento
+    MINIO[(MinIO - Delta Bronze/Silver/Gold)]
+  end
+
+  SQL --> SP
+  CSV --> SP
+  KP --> KAFKA[(Kafka topic dataset_updates)] --> SP
+  AF --> SP
+  SP --> MINIO
+```
+
+### Relacion DAGs vs Spark Apps
+
+```mermaid
+flowchart TB
+  DAG1[Airflow DAG\npmd_batch_snapshot_spark] --> APP1[Spark app\npmd_batch_snapshot.py]
+  DAG2[Airflow DAG\npmd_csv_batch_medallion_spark] --> APP2[Spark app\npmd_csv_batch_medallion.py]
+  DAG3[Airflow DAG\npmd_streaming_updates_spark] --> APP3[Spark app\npmd_streaming_updates.py]
+
+  APP1 --> BR1[Bronze/Silver/Gold SQL]
+  APP2 --> BR2[Bronze/Silver/Gold CSV]
+  APP3 --> BR3[Bronze/Silver/Gold Kafka]
+```
 
 ## Estado y objetivos
 
-- Cumple variedad y velocidad: datos estructurados en SQL y eventos JSON semiestructurados en streaming.
-- Orquesta tareas en Airflow con cron, macros temporales, bifurcacion, XCom/TaskFlow, sensores y conexion entre DAGs.
-- Mantiene OpenMetadata como componente opcional para catalogacion y gobierno, sin exigir funcionalidades avanzadas en esta fase.
+- Cumple variedad y velocidad: datos estructurados, semiestructurados y streaming real.
+- Orquesta tareas en Airflow con cron, macros temporales, bifurcacion, XCom/TaskFlow, sensores y conexion entre DAGs (ASBD).
+- Usa Delta Lake con capas Bronze/Silver/Gold en cada pipeline (PMD).
+- Incluye OpenMetadata basico como componente opcional de catalogacion.
 
 ## Ejecucion rapida (local)
 
@@ -48,20 +94,25 @@ docker compose up -d --build
 - Jupyter: http://localhost:8888
 - Kafka externo: localhost:9094
 - SQL Server: localhost:1433 (usuario: sa, clave: Password1234%)
+- OpenMetadata: http://localhost:8585 (admin@open-metadata.org / admin)
 
 ## Documentacion principal
 
 - Propuesta de producto y requisitos PMD: `docs/propuesta-producto-big-data.md`
+- Documentacion completa del proyecto: `docs/documentacion-completa.md`
+- Arquitectura PMD (pipelines y Medallion): `docs/arquitectura-pmd.md`
 - Orquestacion en Airflow y requisitos ASBD: `docs/arquitectura-airflow.md`
 - Guia de ejecucion local y notas del entorno: `docs/ejecucion-local.md`
 - Alineacion con TFM y alcance actual: `docs/tfm-alineacion.md`
 - OpenMetadata basico (opcional): `docs/openmetadata-basico.md`
+- Pruebas PMD paso a paso: `docs/pruebas-pmd.md`
 
 ## Estructura del repositorio
 
 - `docker-compose/` Entorno reproducible con Airflow, Spark, Kafka, SQL Server y MinIO.
-- `docker-compose/dags/` DAGs de ejemplo para cumplir los requisitos de orquestacion.
-- `docker-compose/spark-apps/` Trabajos Spark de ejemplo para pruebas.
+- `pipelines/dags/` DAGs organizados por carpetas (real / test / maintenance).
+- `pipelines/spark-apps/` Jobs Spark de los pipelines PMD.
+- `pipelines/data/` Datos locales (CSV) montados en Spark.
 - `docs/` Documentacion funcional y tecnica del proyecto.
 - `TFM/` Documentos de referencia del TFM.
 - `OpenMetadata_documentacion/` Material de apoyo sobre OpenMetadata.
@@ -69,7 +120,7 @@ docker compose up -d --build
 
 ## Alcance actual del TFM (fase base)
 
-El trabajo se centra en construir una base reproducible que permite avanzar en el TFM: catalogo de datasets, pipeline batch y streaming, y orquestacion con Airflow. Los objetivos mas avanzados de DCAT-AP se consideran logros futuros posibles y no forman parte del alcance de esta fase.
+El trabajo se centra en construir una base reproducible que permite avanzar en el TFM: catalogo de datasets, pipelines batch/streaming con Delta, y orquestacion con Airflow. Los objetivos mas avanzados de DCAT-AP se consideran logros futuros posibles y no forman parte del alcance de esta fase.
 
 ### Logros futuros posibles (fuera de alcance en esta fase)
 
@@ -79,3 +130,4 @@ El trabajo se centra en construir una base reproducible que permite avanzar en e
 - Implementar pipeline de ingestion desde una fuente externa (por ejemplo CKAN).
 - Validar la configuracion mediante exportacion o federacion en formato compatible con DCAT-AP.
 - Evaluar beneficios y limitaciones de la configuracion en interoperabilidad y mantenimiento.
+

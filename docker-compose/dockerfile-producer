@@ -1,0 +1,7 @@
+FROM python:3.11-slim
+
+WORKDIR /opt/producer
+
+RUN pip install --no-cache-dir kafka-python==2.0.2
+
+CMD ["python", "/opt/producer/producer_kafka.py"]
