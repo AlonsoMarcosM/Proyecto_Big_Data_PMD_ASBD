@@ -1,11 +1,21 @@
 # Trabajo final PMD y ASBD - Catalogo de metadatos de datasets
 
-Este repositorio implementa una propuesta sencilla y reproducible de producto Big Data para las asignaturas Procesamiento Masivo de Datos (PMD) y Arquitectura de Sistemas Big Data (ASBD). La propuesta limita el alcance a pipelines claros y demostrables.
+Proyecto Big Data reproducible para portfolio, basado en un caso de uso realista:
+mantener un catalogo de datasets actualizado combinando batch y streaming con
+arquitectura Medallion (Bronze/Silver/Gold) sobre Delta Lake.
 
-La idea central es mantener un catalogo vivo con tres pipelines (Medallion + Delta):
+## Resumen ejecutivo
+
+- Objetivo: catalogo vivo de metadatos de datasets con ingesta batch y streaming.
+- Arquitectura: SQL Server + CSV + Kafka -> Spark (Delta) -> MinIO.
+- Orquestacion: Airflow para batch y control de ejecucion.
+- Resultados: salidas Gold y previews locales listos para visualizacion.
+
+## Pipelines principales
+
 - Batch estructurado incremental desde SQL Server.
 - Batch semiestructurado desde CSV.
-- Streaming Kafka con join con batch.
+- Streaming Kafka con join con batch (Silver SQL) y ventanas.
 
 ## Diagramas (Mermaid)
 
@@ -56,6 +66,22 @@ flowchart TB
 - Cumple variedad y velocidad: datos estructurados, semiestructurados y streaming real.
 - Orquesta tareas en Airflow con cron, macros temporales, bifurcacion, XCom/TaskFlow, sensores y conexion entre DAGs (ASBD).
 - Usa Delta Lake con capas Bronze/Silver/Gold en cada pipeline (PMD).
+
+## Arquitectura y componentes (resumen)
+
+- SQL Server: fuente estructurada y base para ingesta incremental.
+- CSV local: fuente semiestructurada con campos JSON embebidos.
+- Kafka: broker para eventos de cambios incrementales.
+- Productor Kafka (Python): genera eventos en tiempo real fuera de Airflow.
+- Spark: procesamiento batch y streaming con Delta Lake.
+- MinIO: almacenamiento S3 local para Bronze/Silver/Gold.
+- Airflow: orquestacion de procesos batch y requisitos ASBD.
+
+## Resultados visibles
+
+- Salidas Delta en MinIO (Bronze/Silver/Gold).
+- Previews locales generados automaticamente al final de cada pipeline:
+  `docs/visualizaciones/` con `preview.csv` y `preview.jsonl`.
 
 ## Ejecucion rapida (local)
 
@@ -110,14 +136,3 @@ docker compose up -d --build
 - `pipelines/data/` Datos locales (CSV) montados en Spark.
 - `docs/` Documentacion funcional y tecnica del proyecto.
 - `docs/visualizaciones/` Previews locales (CSV/JSONL) generados al final de cada pipeline.
-
-## Alcance actual del TFM (fase base)
-
-El trabajo se centra en construir una base reproducible que permite avanzar en el TFM: catalogo de datasets, pipelines batch/streaming con Delta, y orquestacion con Airflow. Los objetivos mas avanzados de DCAT-AP se consideran logros futuros posibles y no forman parte del alcance de esta fase.
-
-### Logros futuros posibles (fuera de alcance en esta fase)
-
-- Analizar la estructura y los elementos de un modelo de catalogo interoperable.
-- Implementar pipeline de ingestion desde una fuente externa (por ejemplo CKAN).
-- Validar la configuracion mediante exportacion o federacion en formato compatible con estandares de catalogo.
-- Evaluar beneficios y limitaciones de la configuracion en interoperabilidad y mantenimiento.
