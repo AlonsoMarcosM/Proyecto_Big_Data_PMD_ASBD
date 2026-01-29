@@ -19,16 +19,14 @@ with DAG(
         conn_id="spark_default",
         application="/opt/spark-apps/pmd_csv_batch_medallion.py",
         name="pmd_csv_batch_medallion",
-        packages=(
-            "org.apache.hadoop:hadoop-aws:3.4.0,"
-            "software.amazon.awssdk:bundle:2.23.19"
-        ),
         conf={
             "spark.hadoop.fs.s3a.endpoint": "http://minio:9000",
             "spark.hadoop.fs.s3a.path.style.access": "true",
             "spark.hadoop.fs.s3a.connection.ssl.enabled": "false",
             "spark.hadoop.fs.s3a.access.key": "minioadmin",
             "spark.hadoop.fs.s3a.secret.key": "minioadmin123",
+            "spark.pyspark.python": "python3.11",
+            "spark.pyspark.driver.python": "python3.11",
         },
         verbose=True,
     )

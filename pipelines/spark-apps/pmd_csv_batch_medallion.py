@@ -35,20 +35,23 @@ def write_preview(df, out_dir, limit=20):
     if not rows:
         return
 
-    os.makedirs(out_dir, exist_ok=True)
-    columns = df.columns
+    try:
+        os.makedirs(out_dir, exist_ok=True)
+        columns = df.columns
 
-    csv_path = os.path.join(out_dir, "preview.csv")
-    with open(csv_path, "w", newline="", encoding="utf-8") as csv_file:
-        writer = csv.writer(csv_file)
-        writer.writerow(columns)
-        for row in rows:
-            writer.writerow([row[col] for col in columns])
+        csv_path = os.path.join(out_dir, "preview.csv")
+        with open(csv_path, "w", newline="", encoding="utf-8") as csv_file:
+            writer = csv.writer(csv_file)
+            writer.writerow(columns)
+            for row in rows:
+                writer.writerow([row[col] for col in columns])
 
-    json_path = os.path.join(out_dir, "preview.jsonl")
-    with open(json_path, "w", encoding="utf-8") as json_file:
-        for row in rows:
-            json_file.write(json.dumps(row.asDict(), default=str) + "\n")
+        json_path = os.path.join(out_dir, "preview.jsonl")
+        with open(json_path, "w", encoding="utf-8") as json_file:
+            for row in rows:
+                json_file.write(json.dumps(row.asDict(), default=str) + "\n")
+    except OSError as exc:
+        print(f"Preview not written: {exc}")
 
 
 spark = build_spark()

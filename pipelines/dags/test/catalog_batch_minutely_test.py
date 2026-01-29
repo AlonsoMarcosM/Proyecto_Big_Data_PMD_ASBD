@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from airflow import DAG
 from airflow.decorators import task
-from airflow.operators.bash import BashOperator
 from airflow.operators.empty import EmptyOperator
-from airflow.operators.python import BranchPythonOperator
+from airflow.operators.python import BranchPythonOperator, get_current_context
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 
 
@@ -18,14 +17,6 @@ with DAG(
     catchup=False,
     tags=["catalogo", "batch"],
 ) as dag:
-    log_execution_date = BashOperator(
-        task_id="log_execution_date",
-        bash_command=(
-            "echo run_date={{ ds }} && "
-            "echo data_interval_end={{ data_interval_end }}"
-        ),
-    )
-
     @task
     def extract_snapshot() -> dict:
         # Simula lectura desde SQL Server
@@ -96,15 +87,18 @@ with DAG(
 
     snapshot_ready = EmptyOperator(task_id="snapshot_ready")
 
-    trigger_streaming_dag = TriggerDagRunOperator(
-        task_id="trigger_streaming_dag",
-        trigger_dag_id="catalog_streaming_events_test",
-        conf={
-            "run_date": "{{ ds }}",
-            "incomplete_dataset_ids": "{{ ti.xcom_pull(task_ids='find_incomplete_metadata') }}",
-        },
-        wait_for_completion=False,
-    )
+    @task
+    def build_trigger_conf(incomplete_ids: list[str]) -> dict:
+        context = get_current_context()
+        logical_date = context.get("logical_date") or context.get("data_interval_end")
+        if logical_date:
+            run_date = logical_date.isoformat()
+        else:
+            run_date = datetime.now(timezone.utc).isoformat()
+        return {
+            "run_date": run_date,
+            "incomplete_dataset_ids": incomplete_ids,
+        }
 
     end = EmptyOperator(task_id="end", trigger_rule="none_failed_min_one_success")
 
@@ -112,7 +106,14 @@ with DAG(
     normalized = normalize_snapshot(snapshot)
     incomplete = find_incomplete_metadata(normalized)
 
-    log_execution_date >> snapshot >> normalized >> incomplete >> snapshot_ready
+    trigger_streaming_dag = TriggerDagRunOperator(
+        task_id="trigger_streaming_dag",
+        trigger_dag_id="catalog_streaming_events_test",
+        conf=build_trigger_conf(incomplete),
+        wait_for_completion=False,
+    )
+
+    snapshot >> normalized >> incomplete >> snapshot_ready
     snapshot_ready >> decide_branch
 
     decide_branch >> trigger_streaming_dag >> end

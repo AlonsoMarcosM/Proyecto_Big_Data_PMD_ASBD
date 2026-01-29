@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import ast
-from datetime import datetime
+from datetime import datetime, timezone
 
 from airflow import DAG
 from airflow.decorators import task
@@ -15,7 +15,13 @@ def _external_execution_date_fn(execution_date, **context):
     if dag_run and dag_run.conf:
         run_date = dag_run.conf.get("run_date")
     if run_date:
-        return datetime.strptime(run_date, "%Y-%m-%d")
+        try:
+            parsed = datetime.fromisoformat(run_date)
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=timezone.utc)
+            return parsed
+        except ValueError:
+            return datetime.strptime(run_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
     return execution_date.replace(hour=0, minute=0, second=0, microsecond=0)
 
 

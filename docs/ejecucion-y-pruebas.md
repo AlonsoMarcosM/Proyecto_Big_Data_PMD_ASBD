@@ -126,6 +126,16 @@ docker exec -i kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:909
 Recomendacion: ejecutar los jobs de Spark uno a uno (no simultaneos) para evitar picos de CPU/RAM.
 Flujo sugerido por pipeline: **ejecucion -> test -> visualizacion -> apagado -> siguiente pipeline**.
 
+Nota Airflow (DAGs de prueba):
+- `catalog_batch_minutely_test` dispara automaticamente `catalog_streaming_events_test`.
+- Si lo lanzas manualmente, usa un `logical_date` en UTC para que el sensor encuentre el run correcto:
+
+```powershell
+$logical = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss+00:00")
+$runId = "manual__" + (Get-Date -Format "yyyyMMddTHHmmss")
+docker compose exec -T airflow-scheduler airflow dags trigger catalog_batch_minutely_test -r $runId -l $logical
+```
+
 
 ### Bloques rapidos por pipeline
 

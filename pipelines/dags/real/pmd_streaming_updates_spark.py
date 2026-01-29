@@ -19,6 +19,15 @@ with DAG(
         conn_id="spark_default",
         application="/opt/spark-apps/pmd_streaming_updates.py",
         name="pmd_kafka_streaming_medallion",
+        conf={
+            "spark.hadoop.fs.s3a.endpoint": "http://minio:9000",
+            "spark.hadoop.fs.s3a.path.style.access": "true",
+            "spark.hadoop.fs.s3a.connection.ssl.enabled": "false",
+            "spark.hadoop.fs.s3a.access.key": "minioadmin",
+            "spark.hadoop.fs.s3a.secret.key": "minioadmin123",
+            "spark.pyspark.python": "python3.11",
+            "spark.pyspark.driver.python": "python3.11",
+        },
         verbose=True,
     )
 

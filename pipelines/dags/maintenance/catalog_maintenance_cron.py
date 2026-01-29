@@ -3,7 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 
 from airflow import DAG
-from airflow.operators.bash import BashOperator
+from airflow.decorators import task
+from airflow.operators.python import get_current_context
 
 
 with DAG(
@@ -14,13 +15,11 @@ with DAG(
     catchup=False,
     tags=["catalogo", "cron"],
 ) as dag:
-    log_cron_window = BashOperator(
-        task_id="log_cron_window",
-        bash_command=(
-            "echo cron_run={{ ts }} && "
-            "echo data_interval_start={{ data_interval_start }} && "
-            "echo data_interval_end={{ data_interval_end }}"
-        ),
-    )
+    @task
+    def log_cron_window() -> None:
+        context = get_current_context()
+        print("cron_run:", context.get("logical_date"))
+        print("data_interval_start:", context.get("data_interval_start"))
+        print("data_interval_end:", context.get("data_interval_end"))
 
-    log_cron_window
+    log_cron_window()

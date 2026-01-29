@@ -19,11 +19,6 @@ with DAG(
         conn_id="spark_default",
         application="/opt/spark-apps/spark_job_test.py",
         name="crear_arquitectura_medallion",
-        packages=(
-            "org.apache.hadoop:hadoop-aws:3.4.0,"
-            "software.amazon.awssdk:bundle:2.23.19,"
-            "io.delta:delta-spark_2.13:4.0.0"
-        ),
         conf={
             "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
             "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog",
@@ -32,6 +27,8 @@ with DAG(
             "spark.hadoop.fs.s3a.connection.ssl.enabled": "false",
             "spark.hadoop.fs.s3a.access.key": "minioadmin",
             "spark.hadoop.fs.s3a.secret.key": "minioadmin123",
+            "spark.pyspark.python": "python3.11",
+            "spark.pyspark.driver.python": "python3.11",
         },
         verbose=True,
     )
