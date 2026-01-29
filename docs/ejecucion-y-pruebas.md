@@ -227,10 +227,18 @@ Apagado del job:
 Nota: primero ejecuta el batch SQL para que exista `silver/sqlserver/dataset_snapshot/` y el join funcione.
 El streaming tiene limites de carga (offsets por micro-batch y particiones) para reducir consumo.
 
+Si vienes de un intento anterior fallido, limpia checkpoints (evita errores de offsets):
+
+```powershell
+docker exec -i minio-mc mc rm -r --force local/catalogo-datasets/checkpoints/bronze/kafka_dataset_updates
+docker exec -i minio-mc mc rm -r --force local/catalogo-datasets/checkpoints/silver/kafka_dataset_updates
+docker exec -i minio-mc mc rm -r --force local/catalogo-datasets/checkpoints/gold/kafka_dataset_updates_agg
+```
+
 1) Lanzar el trabajo streaming (se queda en ejecucion):
 
 ```powershell
-docker exec spark-master /opt/spark/bin/spark-submit /opt/spark-apps/pmd_streaming_updates.py
+docker exec -d spark-master /opt/spark/bin/spark-submit /opt/spark-apps/pmd_streaming_updates.py
 ```
 
 Opcion B (desde Airflow):

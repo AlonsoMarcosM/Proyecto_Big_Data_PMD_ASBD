@@ -182,10 +182,11 @@ Objetivo:
 Claves:
 - Bronze: payload crudo.
 - Silver: eventos parseados.
-- Gold: agregacion por ventana (1 min) con watermark (5 min).
+- Gold: agregacion por ventana (30s) con watermark (1 min).
 - Join con datos batch (Silver SQL) para enriquecer eventos.
 Nota:
 - Ejecuta primero el batch SQL para que exista `silver/sqlserver/dataset_snapshot/`.
+- Para evitar fallos por offsets antiguos, el streaming usa `startingOffsets=latest` y `failOnDataLoss=false`.
 
 ### 4.5 Job extra (material / ejemplo): `pipelines/spark-apps/spark_job_test.py`
 
@@ -337,7 +338,7 @@ Opcion B (desde Airflow):
 Este job se queda corriendo:
 
 ```powershell
-docker exec -it spark-master /opt/spark/bin/spark-submit /opt/spark-apps/pmd_streaming_updates.py
+docker exec -d spark-master /opt/spark/bin/spark-submit /opt/spark-apps/pmd_streaming_updates.py
 ```
 
 Opcion alternativa (desde Airflow):
@@ -376,6 +377,7 @@ En MinIO Console (`http://localhost:9001`):
 
 Alternativa rapida:
 - Abrir los previews en `docs/visualizaciones/` (CSV/JSONL).
+  - Los previews se generan desde el driver; por eso el volumen `docs/visualizaciones` esta montado en `spark-master` y en los workers.
 
 ---
 
@@ -438,6 +440,13 @@ Checklist:
 - El servicio `kafka-producer` esta levantado (`docker compose up -d kafka-producer`).
 - El job `pmd_streaming_updates.py` esta corriendo.
 - Mira outputs en MinIO (si hay checkpoints y gold, el streaming esta funcionando).
+Si vienes de un run fallido, limpia los checkpoints de streaming:
+
+```powershell
+docker exec -i minio-mc mc rm -r --force local/catalogo-datasets/checkpoints/bronze/kafka_dataset_updates
+docker exec -i minio-mc mc rm -r --force local/catalogo-datasets/checkpoints/silver/kafka_dataset_updates
+docker exec -i minio-mc mc rm -r --force local/catalogo-datasets/checkpoints/gold/kafka_dataset_updates_agg
+```
 
 ---
 

@@ -1,0 +1,164 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{graphicx}
+
+\geometry{margin=2.5cm}
+
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+  {\LARGE Memoria breve del proyecto PMD/ASBD\par}
+  \vspace{0.8cm}
+  {\large Catalogo de metadatos de datasets\par}
+  \vspace{1.5cm}
+  {\large Alumno: Alonso Marcos\par}
+  \vspace{0.3cm}
+  {\large Fecha: Enero 2026\par}
+  \vfill
+  {\large Repositorio del codigo:\par}
+  \vspace{0.2cm}
+  \texttt{https://github.com/AlonsoMarcosM/Proyecto\_Big\_Data\_PMD\_ASBD}
+\end{titlepage}
+
+\clearpage
+\setcounter{tocdepth}{1}
+\tableofcontents
+\clearpage
+
+\section{Introduccion y objetivo}
+
+El objetivo del proyecto es implementar una arquitectura Big Data reproducible para las asignaturas de Procesamiento Masivo de Datos (PMD) y Arquitectura de Sistemas Big Data (ASBD). El caso de uso es un \textbf{catalogo de datasets} que se actualiza con ingesta batch y streaming. El enfoque de datos sigue una arquitectura \textbf{Medallion} (Bronze/Silver/Gold) sobre Delta Lake.
+
+\section{Arquitectura desarrollada}
+
+La arquitectura se apoya en Docker Compose y los siguientes componentes:
+
+\begin{itemize}
+  \item \textbf{SQL Server}: fuente estructurada para batch incremental.
+  \item \textbf{CSV local}: fuente semiestructurada para batch.
+  \item \textbf{Kafka}: broker de eventos para streaming.
+  \item \textbf{Productor Kafka}: script Python que publica eventos de actualizacion.
+  \item \textbf{Spark}: procesamiento batch y streaming con Delta Lake.
+  \item \textbf{MinIO}: almacenamiento S3 local para Bronze/Silver/Gold.
+  \item \textbf{Airflow}: orquestacion de pipelines y requisitos ASBD.
+\end{itemize}
+
+La estructura del repositorio separa claramente \textbf{productores} y \textbf{pipelines}:
+
+\begin{itemize}
+  \item \texttt{productores/} contiene los productores (Kafka).
+  \item \texttt{pipelines/} contiene DAGs de Airflow, jobs Spark y datos locales.
+  \begin{figure}[h!]
+  \centering
+  \includegraphics[width=\textwidth]{diagrama.png}
+  \caption{Diagrama de la arquitectura Big Data del proyecto}
+  \label{fig:arquitectura}
+\end{figure}
+
+\end{itemize}
+
+
+\section{Descripcion de elementos}
+
+\subsection{Productores}
+
+\begin{itemize}
+  \item \textbf{Productor Kafka (Python)}: \texttt{productores/kafka/producer\_kafka.py}. Publica eventos JSON en el topic \texttt{dataset\_updates} de forma continua (intervalo configurable con \texttt{PRODUCER\_INTERVAL\_SECONDS}).
+  \item \textbf{Eventos de referencia}: \texttt{productores/kafka/events.jsonl} (solo ejemplo).
+\end{itemize}
+
+\subsection{Pipelines PMD (Medallion)}
+
+\textbf{Pipeline 1: Batch estructurado incremental (SQL Server)}
+\begin{itemize}
+  \item \textbf{Fuente}: tabla \texttt{catalogo.dbo.dataset\_snapshot}.
+  \item \textbf{Job}: \texttt{pipelines/spark-apps/pmd\_batch\_snapshot.py}.
+  \item \textbf{Bronze}: append incremental.
+  \item \textbf{Silver}: limpieza y upsert por \texttt{dataset\_id}.
+  \item \textbf{Gold}: agregado por \texttt{owner}.
+\end{itemize}
+
+\textbf{Pipeline 2: Batch semiestructurado (CSV)}
+\begin{itemize}
+  \item \textbf{Fuente}: \texttt{pipelines/data/csv/catalogo\_dataset.csv} (incluye \texttt{extras\_json}).
+  \item \textbf{Job}: \texttt{pipelines/spark-apps/pmd\_csv\_batch\_medallion.py}.
+  \item \textbf{Bronze}: CSV crudo.
+  \item \textbf{Silver}: parseo de JSON embebido y normalizacion.
+  \item \textbf{Gold}: agregado por \texttt{category}.
+\end{itemize}
+
+\textbf{Pipeline 3: Streaming Kafka + join con batch}
+\begin{itemize}
+  \item \textbf{Fuente}: topic \texttt{dataset\_updates}.
+  \item \textbf{Job}: \texttt{pipelines/spark-apps/pmd\_streaming\_updates.py}.
+  \item \textbf{Bronze}: eventos crudos.
+  \item \textbf{Silver}: eventos parseados.
+  \item \textbf{Gold}: agregacion por ventanas (30s) con watermark (1 min) y join con Silver SQL.
+  \item \textbf{Consumo Kafka}: \texttt{startingOffsets=latest} y \texttt{failOnDataLoss=false} para evitar fallos por offsets antiguos.
+  \item \textbf{Previews}: se generan CSV/JSONL en \texttt{docs/visualizaciones} para inspeccion rapida.
+\end{itemize}
+
+\subsection{Orquestacion (Airflow)}
+
+Los DAGs principales viven en \texttt{pipelines/dags/real/}:
+
+\begin{itemize}
+  \item \texttt{pmd\_batch\_snapshot\_spark}: ejecuta batch SQL.
+  \item \texttt{pmd\_csv\_batch\_medallion\_spark}: ejecuta batch CSV.
+  \item \texttt{pmd\_streaming\_updates\_spark}: ejecuta streaming Kafka (job continuo).
+\end{itemize}
+
+Para requisitos ASBD se incluyen DAGs de prueba en \texttt{pipelines/dags/test/} con macros temporales, bifurcacion, XCom y sensores.
+
+\section{Planificacion de procesos batch}
+
+La planificacion definida en Airflow es:
+\begin{itemize}
+  \item \textbf{Batch SQL incremental}: \texttt{@daily}.
+  \item \textbf{Batch CSV}: cron \texttt{0 2 * * *}.
+\end{itemize}
+
+El streaming se ejecuta bajo demanda (job continuo) y el productor Kafka emite eventos cada 10 segundos por defecto.
+Si hay reinicios del consumidor, puede ser necesario limpiar checkpoints para evitar conflictos de offsets.
+
+\section{Fuentes de datos y entregable inicial}
+
+Las fuentes de datos definidas en el entregable inicial se cubren asi:
+
+\begin{itemize}
+  \item \textbf{Fuente estructurada}: SQL Server con \texttt{dataset\_snapshot} y campo \texttt{modified\_at} para incremental.
+  \item \textbf{Fuente semiestructurada}: CSV con \texttt{extras\_json} para simular campos complejos.
+  \item \textbf{Fuente streaming}: Kafka con eventos JSON generados por productor real.
+\end{itemize}
+
+Esto permite demostrar variedad (estructurado + semiestructurado + streaming) y velocidad (batch + streaming real), ademas de la arquitectura Medallion con Delta Lake.
+
+\section{Almacenamiento y rutas}
+
+MinIO actua como S3 local. El bucket principal es \texttt{catalogo-datasets} y las rutas siguen la estructura Medallion:
+
+\begin{itemize}
+  \item \textbf{SQL Server}: \texttt{bronze/sqlserver}, \texttt{silver/sqlserver}, \texttt{gold/sqlserver}.
+  \item \textbf{CSV}: \texttt{bronze/csv}, \texttt{silver/csv}, \texttt{gold/csv}.
+  \item \textbf{Kafka}: \texttt{bronze/kafka}, \texttt{silver/kafka}, \texttt{gold/kafka}.
+\end{itemize}
+
+Los checkpoints de streaming se guardan en \texttt{catalogo-datasets/checkpoints/}.
+
+\section{Video de demostracion}
+
+Enlace al video (3 minutos) con ejecucion y retos abordados:
+
+\begin{center}
+\texttt{https://TU\_ENLACE\_DE\_VIDEO}
+\end{center}
+
+\section{Conclusion}
+
+El proyecto entrega una arquitectura completa y reproducible que cumple los requisitos de PMD y ASBD: pipelines batch y streaming, uso de Delta Lake con Medallion, orquestacion con Airflow, y productores reales separados. Ademas, se generan previews locales (CSV/JSONL) en \texttt{docs/visualizaciones} para validar rapidamente las salidas Gold. La documentacion detallada se encuentra en \texttt{docs/documentacion-completa.md}.
+
+\end{document}
