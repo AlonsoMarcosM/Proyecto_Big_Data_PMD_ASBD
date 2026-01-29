@@ -15,3 +15,5 @@ docs/visualizaciones/*
 !docs/visualizaciones/gold_*/
 !docs/visualizaciones/gold_*/preview.csv
 !docs/visualizaciones/gold_*/preview.jsonl
+# memoria del trabajo (no versionar)
+memoria.latex
