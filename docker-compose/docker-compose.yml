@@ -118,6 +118,7 @@ services:
     volumes:
       - ../pipelines/spark-apps:/opt/spark-apps
       - ../pipelines/data:/opt/spark-data 
+      - ../docs/visualizaciones:/opt/visualizaciones
       # - ./spark-metastore:/opt/hive/metastore_db
     ports:
       - "8081:8081"
@@ -153,7 +154,8 @@ services:
       /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
     volumes:
       - ../pipelines/spark-apps:/opt/spark-apps
-      - ../pipelines/data:/opt/spark-data    
+      - ../pipelines/data:/opt/spark-data 
+      - ../docs/visualizaciones:/opt/visualizaciones
       # - ./spark-metastore:/opt/hive/metastore_db
     ports:
       - "8082:8082"

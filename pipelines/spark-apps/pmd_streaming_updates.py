@@ -21,6 +21,7 @@ def build_spark() -> SparkSession:
         SparkSession.builder
         .appName("pmd_kafka_streaming_medallion")
         .master("spark://spark-master:7077")
+        .config("spark.submit.deployMode", "client")
         .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
         .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
         .config("spark.sql.warehouse.dir", "s3a://catalogo-datasets/")
@@ -71,7 +72,8 @@ raw_events = (
     spark.readStream.format("kafka")
     .option("kafka.bootstrap.servers", "kafka:9092")
     .option("subscribe", "dataset_updates")
-    .option("startingOffsets", "earliest")
+    .option("startingOffsets", "latest")
+    .option("failOnDataLoss", "false")
     .option("maxOffsetsPerTrigger", "200")
     .load()
 )
@@ -123,9 +125,9 @@ batch_silver = spark.read.format("delta").load(batch_silver_path)
 enriched = parsed_events.join(batch_silver, "dataset_id", "left")
 
 agg = (
-    enriched.withWatermark("event_time", "5 minutes")
+    enriched.withWatermark("event_time", "1 minute")
     .groupBy(
-        window(col("event_time"), "1 minute"),
+        window(col("event_time"), "30 seconds"),
         col("dataset_id"),
         col("event_type"),
         col("owner"),
@@ -152,7 +154,7 @@ def write_gold_and_preview(batch_df, _batch_id):
 gold_query = (
     agg.writeStream.foreachBatch(write_gold_and_preview)
     .option("checkpointLocation", gold_checkpoint)
-    .outputMode("append")
+    .outputMode("update")
     .trigger(processingTime="30 seconds")
     .start()
 )
