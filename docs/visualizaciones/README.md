@@ -12,6 +12,15 @@ Salidas esperadas (si existen datos):
 - `gold_kafka_dataset_updates_agg/preview.csv`
 - `gold_kafka_dataset_updates_agg/preview.jsonl`
 
+Ejemplos de datos base (para comparar con Gold):
+
+- `ejemplos/events.jsonl` (eventos Kafka de referencia)
+- `ejemplos/seed_dataset_snapshot.sql` (seed SQL Server)
+- `ejemplos/catalogo_dataset.csv` (CSV base)
+
+Nota:
+- La carpeta `gold_kafka_dataset_updates_agg/` solo aparece si se ejecuta el streaming.
+
 Sugerencia para verlos en VS Code:
 
 - CSV: extension "Rainbow CSV".

@@ -1,0 +1,4 @@
+dataset_id,title,category,owner,tags,extras_json,modified_at
+ds_101,Catalogo movilidad,transporte,equipo_movilidad,"movilidad;csv","{""license"":""CC-BY-4.0"",""frequency"":""monthly"",""format"":""CSV""}",2025-12-20T08:00:00Z
+ds_102,Catalogo energia,energia,equipo_energia,"energia;csv","{""license"":""CC0"",""frequency"":""quarterly"",""format"":""CSV""}",2025-12-21T09:15:00Z
+ds_103,Catalogo turismo,turismo,equipo_turismo,"turismo;csv","{""license"":""CC-BY-4.0"",""frequency"":""monthly"",""format"":""CSV""}",2025-12-22T11:30:00Z

@@ -126,56 +126,8 @@ docker exec -i kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:909
 Recomendacion: ejecutar los jobs de Spark uno a uno (no simultaneos) para evitar picos de CPU/RAM.
 Flujo sugerido por pipeline: **ejecucion -> test -> visualizacion -> apagado -> siguiente pipeline**.
 
-### Terminales sugeridas (en paralelo)
 
-- Terminal A (ejecucion del job)
-- Terminal B (logs de Airflow o Spark)
-- Terminal C (verificacion en MinIO/Kafka)
-
-Comandos directos (ejemplos):
-
-Terminal A (ejecucion):
-
-```powershell
-# Batch SQL
-docker exec spark-master /opt/spark/bin/spark-submit /opt/spark-apps/pmd_batch_snapshot.py
-
-# Batch CSV
-docker exec spark-master /opt/spark/bin/spark-submit /opt/spark-apps/pmd_csv_batch_medallion.py
-
-# Streaming
-docker exec spark-master /opt/spark/bin/spark-submit /opt/spark-apps/pmd_streaming_updates.py
-```
-
-Terminal B (logs):
-
-```powershell
-# Logs Airflow (si ejecutas DAGs)
-docker compose logs -f airflow-scheduler
-
-# Logs Spark (master/worker)
-docker compose logs -f spark-master
-docker compose logs -f spark-worker-1
-docker compose logs -f spark-worker-2
-
-# Logs productor Kafka
-docker compose logs -f kafka-producer
-```
-
-Terminal C (verificacion rapida):
-
-```powershell
-# Kafka: leer 5 eventos
-docker exec -i kafka /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic dataset_updates --from-beginning --max-messages 5
-
-# SQL Server: contar filas del snapshot
-docker exec -i sqlserver /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P "Password1234%" -Q "SELECT COUNT(*) FROM catalogo.dbo.dataset_snapshot;"
-
-# MinIO: listar Gold (desde minio-mc)
-docker exec -i minio-mc mc ls local/catalogo-datasets/gold/
-```
-
-### Bloques rapidos por pipeline (copiar y pegar)
+### Bloques rapidos por pipeline
 
 Batch SQL (Spark):
 

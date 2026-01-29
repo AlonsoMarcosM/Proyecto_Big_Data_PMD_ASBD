@@ -11,3 +11,8 @@ docs/tfm-alineacion.md
 docs/openmetadata-basico.md
 docs/visualizaciones/*
 !docs/visualizaciones/README.md
+!docs/visualizaciones/ejemplos/
+!docs/visualizaciones/ejemplos/*
+!docs/visualizaciones/gold_*/
+!docs/visualizaciones/gold_*/preview.csv
+!docs/visualizaciones/gold_*/preview.jsonl
