@@ -13,7 +13,7 @@
     "provider": "github-pages",
     "mode": "static-evidence",
     "source_branch": "main",
-    "status": "prepared",
+    "status": "live",
     "url": "https://alonsomarcosm.github.io/Proyecto_Big_Data_PMD_ASBD/"
   }
 }

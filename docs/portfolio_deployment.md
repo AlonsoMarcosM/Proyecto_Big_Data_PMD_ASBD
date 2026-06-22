@@ -6,4 +6,4 @@ El workflow `.github/workflows/pages.yml` construye el repositorio con Jekyll y 
 
 La reproducción completa continúa siendo local mediante `docker-compose/docker-compose.yml`.
 
-Última verificación de configuración: 2026-06-22.
+Última verificación pública: 2026-06-22, respuesta HTTP 200 y workflow completo.
