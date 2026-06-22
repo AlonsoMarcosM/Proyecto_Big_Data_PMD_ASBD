@@ -1,0 +1,5 @@
+title: Catálogo Big Data PMD y ASBD
+description: Arquitectura Medallion con Airflow, Spark, Kafka, Delta Lake y MinIO
+theme: jekyll-theme-cayman
+markdown: kramdown
+show_downloads: true
