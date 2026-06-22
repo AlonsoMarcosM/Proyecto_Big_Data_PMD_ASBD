@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "repository": "AlonsoMarcosM/Proyecto_Big_Data_PMD_ASBD",
+  "repository_url": "https://github.com/AlonsoMarcosM/Proyecto_Big_Data_PMD_ASBD",
+  "title": {"es": "Catálogo Big Data PMD y ASBD", "en": "PMD and ASBD Big Data Catalogue"},
+  "summary": {
+    "es": "Catálogo de metadatos con batch, streaming y arquitectura Medallion.",
+    "en": "Metadata catalogue with batch, streaming and a Medallion architecture."
+  },
+  "technologies": ["Airflow", "Spark", "Kafka", "Delta Lake", "MinIO", "Docker"],
+  "deployment": {
+    "type": "documentation",
+    "provider": "github-pages",
+    "mode": "static-evidence",
+    "source_branch": "main",
+    "status": "prepared",
+    "url": "https://alonsomarcosm.github.io/Proyecto_Big_Data_PMD_ASBD/"
+  }
+}
