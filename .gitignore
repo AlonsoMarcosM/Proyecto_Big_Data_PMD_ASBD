@@ -17,8 +17,3 @@ docs/visualizaciones/*
 !docs/visualizaciones/gold_*/preview.jsonl
 # memoria del trabajo (no versionar)
 memoria.latex
-/AGENTS.md
-/CLAUDE.md
-/.agents/
-/.codex/
-/skills/
