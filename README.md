@@ -1,5 +1,7 @@
 # Trabajo final PMD y ASBD - Catalogo de metadatos de datasets
 
+> **Despliegue público:** [Abrir despliegue](https://alonsomarcosm.github.io/Proyecto_Big_Data_PMD_ASBD/)
+
 Proyecto Big Data reproducible para portfolio, basado en un caso de uso realista:
 mantener un catalogo de datasets actualizado combinando batch y streaming con
 arquitectura Medallion (Bronze/Silver/Gold) sobre Delta Lake.
